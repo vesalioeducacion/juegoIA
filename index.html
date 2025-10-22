@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conecta ML en Salud</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        h1 {
+            color: #4c1d95;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            color: #6b7280;
+            font-size: 1.1em;
+        }
+        
+        .score-box {
+            background: #fef3c7;
+            padding: 15px 30px;
+            border-radius: 10px;
+            display: inline-block;
+            margin: 20px 0;
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #92400e;
+        }
+        
+        .level-info {
+            background: #e0e7ff;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+        
+        .level-info h2 {
+            color: #4c1d95;
+            margin-bottom: 10px;
+        }
+        
+        .game-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .column h3 {
+            text-align: center;
+            color: #374151;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+        
+        .item {
+            background: #e0e7ff;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 3px solid transparent;
+        }
+        
+        .item:hover:not(.disabled) {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .item.selected {
+            background: #4c1d95;
+            color: white;
+            border-color: #4c1d95;
+            transform: scale(1.05);
+        }
+        
+        .item.correct {
+            background: #d1fae5;
+            color: #065f46;
+            border-color: #10b981;
+            cursor: not-allowed;
+        }
+        
+        .right-column .item {
+            background: #fce7f3;
+        }
+        
+        .right-column .item.correct {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        
+        .feedback {
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 1.1em;
+        }
+        
+        .feedback.success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 2px solid #10b981;
+        }
+        
+        .feedback.error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 2px solid #ef4444;
+        }
+        
+        .buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-top: 30px;
+        }
+        
+        button {
+            padding: 15px 40px;
+            font-size: 1.1em;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        
+        .btn-reset {
+            background: #6b7280;
+            color: white;
+        }
+        
+        .btn-reset:hover {
+            background: #4b5563;
+        }
+        
+        .btn-next {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-next:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        
+        .completion {
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+        }
+        
+        .completion h2 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+        
+        .instructions {
+            background: #f3f4f6;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 30px;
+        }
+        
+        .instructions h3 {
+            color: #374151;
+            margin-bottom: 15px;
+        }
+        
+        .instructions ul {
+            list-style: none;
+            color: #4b5563;
+        }
+        
+        .instructions li {
+            margin-bottom: 10px;
+            padding-left: 25px;
+            position: relative;
+        }
+        
+        .instructions li:before {
+            content: "•";
+            position: absolute;
+            left: 0;
+            font-size: 1.5em;
+            color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧠 Conecta ML en Salud</h1>
+            <p class="subtitle">Juego educativo para profesionales de la salud</p>
+            <div class="score-box">🏆 Puntuación: <span id="score">0</span></div>
+        </div>
+        
+        <div class="level-info">
+            <h2 id="level-title">Nivel 1: Tipos de Aprendizaje</h2>
+            <p>Conecta cada concepto de ML con su aplicación práctica en salud</p>
+            <p><strong>Nivel <span id="current-level">1</span> de 3 | Conexiones: <span id="connections">0</span>/<span id="total">3</span></strong></p>
+        </div>
+        
+        <div class="game-grid">
+            <div class="column left-column">
+                <h3>Conceptos de ML</h3>
+                <div id="left-items"></div>
+            </div>
+            
+            <div class="column right-column">
+                <h3>Aplicaciones en Salud</h3>
+                <div id="right-items"></div>
+            </div>
+        </div>
+        
+        <div id="feedback" style="display:none;"></div>
+        
+        <div class="buttons">
+            <button class="btn-reset" onclick="resetLevel()">🔄 Reiniciar Nivel</button>
+            <button id="next-btn" class="btn-next" style="display:none;" onclick="nextLevel()">Siguiente Nivel →</button>
+        </div>
+        
+        <div id="completion" style="display:none;"></div>
+        
+        <div class="instructions">
+            <h3>💡 Instrucciones</h3>
+            <ul>
+                <li>Selecciona un concepto de ML de la columna izquierda</li>
+                <li>Luego selecciona su aplicación correspondiente en la columna derecha</li>
+                <li>Recibirás explicaciones educativas con cada conexión correcta</li>
+                <li>Completa todas las conexiones para avanzar al siguiente nivel</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        const levels = [
+            {
+                id: 1,
+                title: "Nivel 1: Tipos de Aprendizaje",
+                concepts: [
+                    { id: 'a1', text: 'Aprendizaje Supervisado' },
+                    { id: 'a2', text: 'Aprendizaje No Supervisado' },
+                    { id: 'a3', text: 'Aprendizaje por Refuerzo' }
+                ],
+                applications: [
+                    { id: 'b1', text: 'Predicción de readmisión hospitalaria con datos etiquetados', match: 'a1' },
+                    { id: 'b2', text: 'Identificar subgrupos de pacientes sin categorías predefinidas', match: 'a2' },
+                    { id: 'b3', text: 'Optimizar dosis de medicamentos mediante prueba y error', match: 'a3' }
+                ],
+                explanations: {
+                    'a1-b1': 'Correcto! El aprendizaje supervisado usa datos históricos etiquetados (pacientes que fueron readmitidos o no) para predecir resultados futuros.',
+                    'a2-b2': 'Excelente! El aprendizaje no supervisado encuentra patrones ocultos en datos sin etiquetas previas, ideal para segmentación de pacientes.',
+                    'a3-b3': 'Perfecto! El aprendizaje por refuerzo aprende mediante recompensas y penalizaciones, útil para optimización de tratamientos.'
+                }
+            },
+            {
+                id: 2,
+                title: "Nivel 2: Algoritmos Clásicos",
+                concepts: [
+                    { id: 'c1', text: 'Regresión Lineal' },
+                    { id: 'c2', text: 'Regresión Logística' },
+                    { id: 'c3', text: 'Árboles de Decisión' },
+                    { id: 'c4', text: 'K-Means' }
+                ],
+                applications: [
+                    { id: 'd1', text: 'Predecir días de estancia hospitalaria', match: 'c1' },
+                    { id: 'd2', text: 'Clasificar si un tumor es benigno o maligno', match: 'c2' },
+                    { id: 'd3', text: 'Diagnosticar enfermedades con reglas interpretables', match: 'c3' },
+                    { id: 'd4', text: 'Agrupar pacientes diabéticos por similitud', match: 'c4' }
+                ],
+                explanations: {
+                    'c1-d1': 'Correcto! La regresión lineal predice valores continuos como días de estancia basándose en variables como edad, comorbilidades, etc.',
+                    'c2-d2': 'Excelente! La regresión logística es ideal para clasificación binaria (benigno/maligno) y proporciona probabilidades.',
+                    'c3-d3': 'Perfecto! Los árboles de decisión son muy interpretables, permitiendo a médicos entender el razonamiento del modelo.',
+                    'c4-d4': 'Muy bien! K-Means agrupa pacientes con características similares, útil para medicina personalizada.'
+                }
+            },
+            {
+                id: 3,
+                title: "Nivel 3: Deep Learning en Salud",
+                concepts: [
+                    { id: 'e1', text: 'Redes Neuronales Convolucionales (CNN)' },
+                    { id: 'e2', text: 'Redes Neuronales Recurrentes (RNN)' },
+                    { id: 'e3', text: 'Transformers' }
+                ],
+                applications: [
+                    { id: 'f1', text: 'Detectar neumonía en radiografías de tórax', match: 'e1' },
+                    { id: 'f2', text: 'Predecir deterioro del paciente con datos de series temporales', match: 'e2' },
+                    { id: 'f3', text: 'Extraer información de historias clínicas no estructuradas', match: 'e3' }
+                ],
+                explanations: {
+                    'e1-f1': 'Correcto! Las CNN son excelentes para análisis de imágenes médicas, detectando patrones visuales como infiltrados pulmonares.',
+                    'e2-f2': 'Excelente! Las RNN procesan secuencias temporales como signos vitales, detectando tendencias de deterioro.',
+                    'e3-f3': 'Perfecto! Los Transformers (como BERT médico) procesan lenguaje natural, extrayendo información clave de notas clínicas.'
+                }
+            }
+        ];
+
+        let currentLevel = 0;
+        let selectedLeft = null;
+        let connections = [];
+        let score = 0;
+
+        function renderLevel() {
+            const level = levels[currentLevel];
+            document.getElementById('level-title').textContent = level.title;
+            document.getElementById('current-level').textContent = currentLevel + 1;
+            document.getElementById('total').textContent = level.concepts.length;
+            document.getElementById('connections').textContent = connections.length;
+            
+            const leftContainer = document.getElementById('left-items');
+            const rightContainer = document.getElementById('right-items');
+            
+            leftContainer.innerHTML = '';
+            rightContainer.innerHTML = '';
+            
+            level.concepts.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'item';
+                div.textContent = item.text;
+                div.onclick = () => selectLeft(item.id);
+                div.id = 'left-' + item.id;
+                leftContainer.appendChild(div);
+            });
+            
+            level.applications.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'item';
+                div.textContent = item.text;
+                div.onclick = () => selectRight(item.id, item.match);
+                div.id = 'right-' + item.id;
+                rightContainer.appendChild(div);
+            });
+        }
+
+        function selectLeft(id) {
+            const item = document.getElementById('left-' + id);
+            if (item.classList.contains('correct')) return;
+            
+            document.querySelectorAll('.left-column .item').forEach(el => {
+                el.classList.remove('selected');
+            });
+            
+            item.classList.add('selected');
+            selectedLeft = id;
+            hideFeedback();
+        }
+
+        function selectRight(id, match) {
+            const item = document.getElementById('right-' + id);
+            if (item.classList.contains('correct') || !selectedLeft) return;
+            
+            const level = levels[currentLevel];
+            const key = selectedLeft + '-' + id;
+            
+            if (match === selectedLeft) {
+                document.getElementById('left-' + selectedLeft).classList.add('correct');
+                document.getElementById('left-' + selectedLeft).classList.remove('selected');
+                item.classList.add('correct');
+                
+                connections.push(key);
+                score += 10;
+                document.getElementById('score').textContent = score;
+                document.getElementById('connections').textContent = connections.length;
+                
+                showFeedback(level.explanations[key], true);
+                
+                if (connections.length === level.concepts.length) {
+                    if (currentLevel < levels.length - 1) {
+                        document.getElementById('next-btn').style.display = 'inline-block';
+                    } else {
+                        showCompletion();
+                    }
+                }
+                
+                selectedLeft = null;
+            } else {
+                showFeedback('Intenta de nuevo. Piensa en qué tipo de problema resuelve mejor este algoritmo.', false);
+            }
+        }
+
+        function showFeedback(message, isSuccess) {
+            const feedback = document.getElementById('feedback');
+            feedback.className = 'feedback ' + (isSuccess ? 'success' : 'error');
+            feedback.textContent = isSuccess ? '✓ ' + message : '✗ ' + message;
+            feedback.style.display = 'block';
+        }
+
+        function hideFeedback() {
+            document.getElementById('feedback').style.display = 'none';
+        }
+
+        function resetLevel() {
+            connections = [];
+            selectedLeft = null;
+            score = Math.max(0, score - 5);
+            document.getElementById('score').textContent = score;
+            document.getElementById('next-btn').style.display = 'none';
+            hideFeedback();
+            renderLevel();
+        }
+
+        function nextLevel() {
+            currentLevel++;
+            connections = [];
+            selectedLeft = null;
+            document.getElementById('next-btn').style.display = 'none';
+            hideFeedback();
+            renderLevel();
+        }
+
+        function showCompletion() {
+            const completion = document.getElementById('completion');
+            completion.innerHTML = `
+                <div class="completion">
+                    <h2>🏆 ¡Felicitaciones!</h2>
+                    <p style="font-size:1.3em; margin-top:10px;">Has completado todos los niveles</p>
+                    <p style="font-size:1.5em; margin-top:15px; font-weight:bold;">Puntuación Final: ${score}</p>
+                </div>
+            `;
+            completion.style.display = 'block';
+        }
+
+        renderLevel();
+    </script>
+</body>
+</html>
